@@ -1172,6 +1172,19 @@ function renderReportsPreview() {
     </tr>`;
 }
 
+
+// ── Safety net: ensure products always render even if async load is slow ──
+document.addEventListener('DOMContentLoaded', () => {
+  // If home-products is still empty after 300ms, render with whatever data we have
+  setTimeout(() => {
+    const el = document.getElementById('home-products');
+    if (el && !el.innerHTML.trim()) {
+      renderHomePage();
+      renderListingPage();
+    }
+  }, 300);
+});
+
 </script>
 </head>
 <body>
@@ -2358,20 +2371,21 @@ async function loadAdminProductsFromStorage() {
       const data = await res.json();
       if (Array.isArray(data.record) && data.record.length > 0) {
         adminProducts = data.record;
-        renderProducts();
-        renderHomePage();
-        return;
       }
     } catch(e) { console.warn('Cloud load failed, using local:', e); }
+  } else {
+    // Fall back to localStorage
+    try {
+      const raw = localStorage.getItem('lancerAdminProducts');
+      if (raw) { adminProducts = JSON.parse(raw); }
+    } catch(e) {}
   }
-  // Fall back to localStorage
-  try {
-    const raw = localStorage.getItem('lancerAdminProducts');
-    if (raw) { adminProducts = JSON.parse(raw); renderProducts(); }
-  } catch(e) {}
+  // Always render after data is ready
+  renderHomePage();
+  renderListingPage();
 }
 
-// Load on startup
+// Load on startup — renders fire inside after data is ready
 loadAdminProductsFromStorage();
 
 function renderAdmin() {
@@ -2562,9 +2576,6 @@ function showToast(msg, type = '') {
 
   startTimer();
 })();
-
-renderHomePage();
-renderListingPage();
 
 // ─────────────────────────────────────────────────────────────
 // ADMIN FULL DASHBOARD DATA & LOGIC
