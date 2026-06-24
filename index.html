@@ -2759,7 +2759,7 @@ async function handleAdminImgUpload(input) {
   input.value = '';
 
   if (!cloudinaryReady) {
-    showToast('⚠️ Using local storage — images won't sync across devices. Set up Cloudinary to fix this.', 'error');
+    showToast('⚠️ Using local storage — images will notsync across devices. Set up Cloudinary to fix this.', 'error');
   }
 }
 
