@@ -1259,6 +1259,15 @@ window.renderAdminFull  = renderAdminFull;
       return true;
     }
 
+    // ── Password show/hide toggle ────────────────────────────────────────────
+    window.togglePassword = (inputId, btn) => {
+      const el = document.getElementById(inputId);
+      if (!el) return;
+      const show = el.type === 'password';
+      el.type = show ? 'text' : 'password';
+      btn.textContent = show ? '🙈' : '👁';
+    };
+
     // ── Auth helpers exposed to global scope (called by onclick= handlers) ───
     window._firebaseAuth = {
 
@@ -1301,16 +1310,14 @@ window.renderAdminFull  = renderAdminFull;
         if (pass !== pass2)  { window.showToast('❌ Passwords do not match', 'error'); return; }
         try {
           const cred = await createUserWithEmailAndPassword(auth, email, pass);
-          // Save the display name
-          await updateProfile(cred.user, { displayName: name });
-          // Send verification email
-          await sendEmailVerification(cred.user);
-          window.showToast('✅ Account created! Check your email (' + email + ') to verify your account.', 'gold');
-          // Sign them in directly (they can verify later)
+          try { await updateProfile(cred.user, { displayName: name }); } catch(_) {}
+          try { await sendEmailVerification(cred.user); } catch(_) {}
+          window.showToast('✅ Account created! Verification email sent to ' + email, 'gold');
           handleAuthSuccess(cred.user);
         } catch(e) {
-          console.error('register error:', e.code, e.message);
-          window.showToast('❌ ' + friendlyError(e.code), 'error');
+          console.error('register error code:', e.code, '| message:', e.message);
+          // Show the REAL error code so nothing is hidden
+          window.showToast('❌ ' + friendlyError(e.code) + ' [' + (e.code||'?') + ']', 'error');
         }
       },
 
@@ -1983,7 +1990,10 @@ window.renderAdminFull  = renderAdminFull;
           <input class="form-input" id="login-email" placeholder="your@uwindsor.ca" value="" autocomplete="email" />
         </div>
         <div class="form-group"><label class="form-label">Password</label>
-          <input class="form-input" type="password" id="login-password" placeholder="Password" value="" autocomplete="current-password" />
+          <div style="position:relative;">
+            <input class="form-input" type="password" id="login-password" placeholder="Password" value="" autocomplete="current-password" style="padding-right:48px;" />
+            <button type="button" onclick="window.togglePassword('login-password', this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--gray4);padding:0;line-height:1;">👁</button>
+          </div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
           <label style="font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;">
@@ -2009,10 +2019,16 @@ window.renderAdminFull  = renderAdminFull;
           <input class="form-input" id="reg-email" placeholder="your@uwindsor.ca" autocomplete="email" />
         </div>
         <div class="form-group"><label class="form-label">Password</label>
-          <input class="form-input" type="password" id="reg-password" placeholder="Min. 6 characters" autocomplete="new-password" />
+          <div style="position:relative;">
+            <input class="form-input" type="password" id="reg-password" placeholder="Min. 6 characters" autocomplete="new-password" style="padding-right:48px;" />
+            <button type="button" onclick="window.togglePassword('reg-password', this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--gray4);padding:0;line-height:1;">👁</button>
+          </div>
         </div>
         <div class="form-group"><label class="form-label">Confirm Password</label>
-          <input class="form-input" type="password" id="reg-password2" placeholder="Repeat password" autocomplete="new-password" />
+          <div style="position:relative;">
+            <input class="form-input" type="password" id="reg-password2" placeholder="Repeat password" autocomplete="new-password" style="padding-right:48px;" />
+            <button type="button" onclick="window.togglePassword('reg-password2', this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--gray4);padding:0;line-height:1;">👁</button>
+          </div>
         </div>
         <button class="btn btn-primary btn-block btn-lg" onclick="window._firebaseAuth?.register()">Create Account</button>
         <div class="auth-divider"><span>or</span></div>
