@@ -1216,39 +1216,42 @@ window.showScreen       = showScreen;
 window.updateNavForUser = updateNavForUser;
 
 // ── Populate profile screen with real logged-in user data ─────────────────
-function renderProfile() {
-  const u = window.currentUser || currentUser;
-
-  // If Firebase hasn't returned user yet, retry in 300ms
-  if (!u) {
-    setTimeout(renderProfile, 300);
-    return;
-  }
-
-  // Initials avatar — from display name or email
+function _fillProfile(u) {
+  if (!u) return;
   const nameParts = (u.name || u.email.split('@')[0]).trim().split(' ').filter(Boolean);
   const initials  = nameParts.length >= 2
     ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
     : nameParts[0].slice(0, 2).toUpperCase();
+  const av = document.getElementById('profile-avatar-initials');
+  const nm = document.getElementById('profile-display-name');
+  const em = document.getElementById('profile-display-email');
+  const si = document.getElementById('profile-member-since');
+  const ei = document.getElementById('profile-email-input');
+  if (av) av.textContent = initials;
+  if (nm) nm.textContent = u.name  || u.email.split('@')[0];
+  if (em) em.textContent = u.email || '';
+  if (si) si.textContent = 'Member since ' + new Date().getFullYear();
+  if (ei) ei.value       = u.email || '';
+}
 
-  const avatarEl = document.getElementById('profile-avatar-initials');
-  if (avatarEl) avatarEl.textContent = initials;
-
-  // Name & email
-  const nameEl  = document.getElementById('profile-display-name');
-  const emailEl = document.getElementById('profile-display-email');
-  if (nameEl)  nameEl.textContent  = u.name  || u.email.split('@')[0];
-  if (emailEl) emailEl.textContent = u.email || '';
-
-  // Member since
-  const sinceEl = document.getElementById('profile-member-since');
-  if (sinceEl) sinceEl.textContent = 'Member since ' + new Date().getFullYear();
-
-  // Account settings email field
-  const emailInput = document.getElementById('profile-email-input');
-  if (emailInput) emailInput.value = u.email || '';
+function renderProfile() {
+  const u = window.currentUser;
+  if (u) {
+    _fillProfile(u);
+  } else {
+    // Firebase module hasn't set currentUser yet — wait for authReady event
+    window.addEventListener('authReady', function handler(e) {
+      window.removeEventListener('authReady', handler);
+      _fillProfile(e.detail);
+    });
+  }
 }
 window.renderProfile = renderProfile;
+
+// Always update profile when auth state changes (e.g. page already on profile screen)
+window.addEventListener('authReady', (e) => {
+  if (e.detail) _fillProfile(e.detail);
+});
 
 window.renderAdminFull  = renderAdminFull;
 
@@ -1399,6 +1402,8 @@ window.renderAdminFull  = renderAdminFull;
         role:     ADMIN_EMAILS.includes(user.email.toLowerCase()) ? 'admin' : 'user'
       };
       window.updateNavForUser?.();
+      // Fire authReady so profile and other listeners update immediately
+      window.dispatchEvent(new CustomEvent('authReady', { detail: window.currentUser }));
       if (window.currentUser.role === 'admin') {
         window.showScreen?.('admin-full');
         window.renderAdminFull?.();
@@ -1445,11 +1450,12 @@ window.renderAdminFull  = renderAdminFull;
           role:     ADMIN_EMAILS.includes(user.email.toLowerCase()) ? 'admin' : 'user'
         };
         window.updateNavForUser?.();
-        // If profile page is open, refresh it with real data
-        window.renderProfile?.();
+        // Dispatch a global event so renderProfile (in regular script) can react
+        window.dispatchEvent(new CustomEvent('authReady', { detail: window.currentUser }));
       } else {
         window.currentUser = null;
         window.updateNavForUser?.();
+        window.dispatchEvent(new CustomEvent('authReady', { detail: null }));
       }
     });
   </script>
