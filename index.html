@@ -1211,18 +1211,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     const el = document.getElementById('home-products');
     if (el && !el.innerHTML.trim()) {
-      renderHomePage();
-      renderListingPage();
+      window.renderHomePage?.();
+      window.renderListingPage?.();
     }
   }, 300);
 });
 
 
-// ── Expose key functions as window globals so Firebase module can call them ──
-window.showToast        = showToast;
-window.showScreen       = showScreen;
-window.updateNavForUser = updateNavForUser;
-
+// (globals defined in main script)
 // ── Populate profile screen with real logged-in user data ─────────────────
 function renderProfile() {
   const u = currentUser;
@@ -1252,9 +1248,7 @@ function renderProfile() {
   const emailInput = document.getElementById('profile-email-input');
   if (emailInput) emailInput.value = u.email || '';
 }
-window.renderProfile = renderProfile;
 
-window.renderAdminFull  = renderAdminFull;
 
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1289,10 +1283,10 @@ async function fsLoadProducts() {
     const snap = await f.getDocs(f.collection(f.db, 'products'));
     if (snap.empty) { console.log('Products collection empty — using default products'); return; }
     adminProducts = snap.docs.map(d => ({ id: d.id, firestoreId: d.id, ...d.data() }));
-    renderHomePage(); renderListingPage();
+    window.renderHomePage?.(); window.renderListingPage?.();
     // If admin is viewing dashboard, update it too
     const kpiRow = document.getElementById('admin-kpi-row');
-    if (kpiRow && kpiRow.innerHTML) renderAdminDashboard();
+    if (kpiRow && kpiRow.innerHTML) window.renderAdminDashboard?.();
     console.log('✅ Products loaded from Firestore:', adminProducts.length);
   } catch(e) { console.warn('Products load failed:', e); }
 }
@@ -1449,8 +1443,8 @@ async function fsLoadAllOrders() {
     // Sort client-side by date descending
     adminOrderList.sort((a, b) => b.id.localeCompare(a.id));
     console.log('✅ Orders loaded from Firestore:', adminOrderList.length);
-    renderAdminDashboard();
-    renderAdminOrders();
+    window.renderAdminDashboard?.();
+    window.renderAdminOrders?.();
   } catch(e) {
     console.error('Admin orders load failed:', e.message);
     window._safeToast('⚠️ Could not load orders: ' + e.message, 'error');
@@ -1478,7 +1472,7 @@ async function fsLoadAds() {
         impressions: d.data().impressions || 0,
       }));
       console.log('✅ Ads loaded from Firestore:', adminAdList.length);
-      renderAdminAds?.();
+      window.renderAdminAds?.();
     }
   } catch(e) { console.warn('Ads load failed:', e); }
 }
@@ -3565,6 +3559,25 @@ function statusPill(status) {
   return `<span class="status-pill ${cls[status] || ''}">${status}</span>`;
 }
 
+
+// ── Window globals — must be at END after all functions are defined ──────────
+window.showToast        = showToast;
+window.showScreen       = showScreen;
+window.updateNavForUser = updateNavForUser;
+window.renderAdminFull  = renderAdminFull;
+window.renderProfile    = renderProfile;
+window.doLogin          = doLogin;
+window.doLogout         = doLogout;
+window.switchAuthTab    = switchAuthTab;
+
+// ── Admin render functions exposed globally ──────────────────────────────────
+window.renderAdminDashboard = typeof renderAdminDashboard !== 'undefined' ? renderAdminDashboard : function(){};
+window.renderAdminOrders    = typeof renderAdminOrders    !== 'undefined' ? renderAdminOrders    : function(){};
+window.renderAdminProducts  = typeof renderAdminProducts  !== 'undefined' ? renderAdminProducts  : function(){};
+window.renderAdminAds       = typeof renderAdminAds       !== 'undefined' ? renderAdminAds       : function(){};
+window.renderHomePage       = typeof renderHomePage       !== 'undefined' ? renderHomePage       : function(){};
+window.renderListingPage    = typeof renderListingPage    !== 'undefined' ? renderListingPage    : function(){};
+window.renderProducts       = typeof renderProducts       !== 'undefined' ? renderProducts       : function(){};
 </script>
 </body>
 </html>
