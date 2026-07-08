@@ -1282,6 +1282,9 @@ async function fsLoadProducts() {
     if (snap.empty) { await fsSeedProducts(); return; }
     adminProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderHomePage(); renderListingPage();
+    // If admin is viewing dashboard, update it too
+    const kpiRow = document.getElementById('admin-kpi-row');
+    if (kpiRow && kpiRow.innerHTML) renderAdminDashboard();
     console.log('✅ Products loaded from Firestore:', adminProducts.length);
   } catch(e) { console.warn('Products load failed:', e); }
 }
@@ -1414,15 +1417,27 @@ async function fsLoadAllOrders() {
   const f = fs(); if (!f) return;
   try {
     const snap = await f.getDocs(f.query(f.collection(f.db, 'orders'), f.orderBy('createdAt', 'desc')));
-    adminOrderList = snap.docs.map(d => ({
-      id:       d.data().orderId,
-      customer: d.data().customerName,
-      email:    d.data().customerEmail,
-      items:    Array.isArray(d.data().items) ? d.data().items.map(i=>i.name+'×'+i.quantity).join(', ') : d.data().items,
-      total:    '$' + Number(d.data().total).toFixed(2),
-      date:     d.data().createdAt?.toDate ? d.data().createdAt.toDate().toLocaleDateString('en-CA',{year:'numeric',month:'short',day:'numeric'}) : '—',
-      status:   d.data().status
-    }));
+    adminOrderList = snap.docs.map(d => {
+      const data = d.data();
+      const itemsStr = Array.isArray(data.items)
+        ? data.items.map(i => i.name + (i.quantity > 1 ? ' ×' + i.quantity : '')).join(', ')
+        : (data.items || '—');
+      const dateStr = data.createdAt?.toDate
+        ? data.createdAt.toDate().toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'})
+        : '—';
+      return {
+        id:       data.orderId,
+        customer: data.customerName,
+        email:    data.customerEmail,
+        items:    itemsStr,
+        total:    '$' + Number(data.total).toFixed(2),
+        date:     dateStr,
+        status:   data.status
+      };
+    });
+    console.log('✅ Orders loaded from Firestore:', adminOrderList.length);
+    // Re-render dashboard and orders tab with real data
+    renderAdminDashboard();
     renderAdminOrders();
   } catch(e) { console.warn('Admin orders load failed:', e); }
 }
@@ -1551,7 +1566,7 @@ window.fsDeleteProduct = fsDeleteProduct;
 
     // ── Admin email list — these users get the Admin Dashboard ───────────────
     const ADMIN_EMAILS = [
-      "sarveshsolanke@gmail.com",
+      "admin1@uwindsor.ca",
       "admin2@uwindsor.ca",
       "admin3@uwindsor.ca",
       "admin4@uwindsor.ca"
@@ -3147,21 +3162,22 @@ let adminAdList = [
 ];
 let adminAdNextId = 4;
 
-let adminOrderList = [
-  { id:'ORD-1042', customer:'Hemit Rana',     email:'hemit@uwindsor.ca',   items:'Lancer Hoodie × 2',           total:'$79.98',  date:'Jun 22, 2026', status:'Processing' },
-  { id:'ORD-1041', customer:'Priya Shah',      email:'priya@uwindsor.ca',   items:'Lancer T-Shirt × 1',          total:'$34.99',  date:'Jun 21, 2026', status:'Shipped'    },
-  { id:'ORD-1040', customer:'Marcus Brown',    email:'mbrown@uwindsor.ca',  items:'Cap × 1, Scarf × 1',          total:'$52.00',  date:'Jun 20, 2026', status:'Delivered'  },
-  { id:'ORD-1039', customer:'Yuna Kim',        email:'ykim@uwindsor.ca',    items:'Lancer Jacket × 1',           total:'$89.99',  date:'Jun 19, 2026', status:'Delivered'  },
-  { id:'ORD-1038', customer:'James Okonkwo',   email:'jokonkwo@uwindsor.ca',items:'Sweatpants × 2',              total:'$69.98',  date:'Jun 18, 2026', status:'Cancelled'  },
-  { id:'ORD-1037', customer:'Sofia Mendes',    email:'smendes@uwindsor.ca', items:'Lancer Hoodie × 1, Cap × 2', total:'$94.97',  date:'Jun 17, 2026', status:'Shipped'    },
-  { id:'ORD-1036', customer:'Liam Zhang',      email:'lzhang@uwindsor.ca',  items:'Lancer T-Shirt × 3',          total:'$104.97', date:'Jun 16, 2026', status:'Delivered'  },
-  { id:'ORD-1035', customer:'Amara Diallo',    email:'adiallo@uwindsor.ca', items:'Hoodie × 1',                  total:'$44.99',  date:'Jun 15, 2026', status:'Processing' },
-];
+// adminOrderList — populated from Firestore on admin login
+let adminOrderList = [];
 
-function renderAdminFull() {
-  // Set badge with name
+async function renderAdminFull() {
   const badge = document.getElementById('admin-user-badge');
   if (badge && currentUser) badge.textContent = currentUser.name + ' · ADMIN';
+
+  // Show loading state on dashboard
+  const kpiRow = document.getElementById('admin-kpi-row');
+  if (kpiRow) kpiRow.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray4);">⏳ Loading data from Firebase...</div>';
+
+  // Load from Firestore if available, otherwise use local data
+  if (window._firestoreOps) {
+    await window.loadAdminDataFromFirestore?.();
+  }
+
   switchAdminTab('dashboard');
 }
 
