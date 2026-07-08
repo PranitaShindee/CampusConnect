@@ -1038,6 +1038,19 @@ window.buildHomepageCarousel = buildHomepageCarousel;
 </script>
 
   <script>
+
+// ── Status pill helper ───────────────────────────────────────────────────────
+function statusPill(status) {
+  var cls = {
+    'Processing': 'sp-processing',
+    'Shipped':    'sp-shipped',
+    'Delivered':  'sp-delivered',
+    'Cancelled':  'sp-cancelled'
+  };
+  return '<span class="status-pill ' + (cls[status] || '') + '">' + (status||'—') + '</span>';
+}
+window.statusPill = statusPill;
+
 // Safe toast wrapper — works even if main script hasn't loaded yet
 function _safeToast(msg, type) {
   if (window.showToast) { window.showToast(msg, type); }
@@ -1516,6 +1529,27 @@ async function fsLoadAds() {
       }));
       console.log('✅ Ads loaded from Firestore:', adminAdList.length);
       
+// ── Ad action functions ─────────────────────────────────────────────────────
+function toggleAdActive(key) {
+  var a = adminAdList.find(function(x){ return String(x.id) === String(key) || String(x.firestoreId) === String(key); });
+  if (!a) { console.warn('Ad not found:', key); return; }
+  a.active = !a.active;
+  if (window.fsSaveAd) window.fsSaveAd(a);
+  window.renderAdminAds?.();
+  window.buildHomepageCarousel?.();
+  window._safeToast(a.active ? '▶ Ad is now LIVE' : '⏸ Ad paused', 'gold');
+}
+
+function deleteAd(key) {
+  if (!confirm('Delete this ad?')) return;
+  var a = adminAdList.find(function(x){ return String(x.id) === String(key) || String(x.firestoreId) === String(key); });
+  if (a && a.firestoreId && window.fsDeleteAd) window.fsDeleteAd(a.firestoreId);
+  adminAdList = adminAdList.filter(function(x){ return String(x.id) !== String(key) && String(x.firestoreId) !== String(key); });
+  window.renderAdminAds?.();
+  window.buildHomepageCarousel?.();
+  window._safeToast('🗑 Ad deleted', 'gold');
+}
+
 function adToggle(key) { toggleAdActive(key); }
 function adDelete(key) { deleteAd(key); }
 window.renderAdminAds?.();
