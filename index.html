@@ -992,7 +992,9 @@ nav {
 .auth-card #form-register { width: 100%; }
 
 </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <script>
 // ─────────────────────────────────────────────────────────────
 // EXCEL EXPORT REPORTS
 // ─────────────────────────────────────────────────────────────
@@ -1387,20 +1389,22 @@ async function fsLoadUserOrders() {
 function renderUserOrders(orders) {
   const tbody = document.querySelector('#ptab-orders table tbody');
   if (!tbody) return;
-  if (orders.length === 0) {
+  if (!orders || orders.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--gray4);">No orders yet. Start shopping!</td></tr>';
     return;
   }
-  tbody.innerHTML = orders.map(o => `
-    <tr>
-      <td><strong>${o.orderId}</strong></td>
-      <td>${o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('en-CA', {year:'numeric',month:'short',day:'numeric'}) : '—'}</td>
-      <td>${Array.isArray(o.items) ? o.items.map(i => i.name + (i.quantity > 1 ? ' ×'+i.quantity : '')).join(', ') : o.items}</td>
-      <td><strong>$${Number(o.total).toFixed(2)}</strong></td>
-      <td><span class="status-badge status-${(o.status||'').toLowerCase()}">${o.status}</span></td>
-      <td>${o.status === 'Shipped' ? '<button class="btn btn-sm btn-outline" onclick="showScreen('tracking')">Track →</button>' : '<button class="btn btn-sm btn-outline">Reorder</button>'}</td>
-    </tr>
-  `).join('');
+  let rows = '';
+  orders.forEach(function(o) {
+    const dateStr   = o.createdAt && o.createdAt.toDate ? o.createdAt.toDate().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : (o.date || '—');
+    const itemsStr  = Array.isArray(o.items) ? o.items.map(function(i){ return i.name + (i.quantity > 1 ? ' x'+i.quantity : ''); }).join(', ') : (o.items || '—');
+    const total     = o.total ? '$' + Number(o.total).toFixed(2) : '—';
+    const statusCls = (o.status||'').toLowerCase().replace(' ','-');
+        var trackBtn   = '<button class="btn btn-sm btn-outline" onclick="showScreen(&#39;tracking&#39;)">Track</button>';
+    var reorderBtn = '<button class="btn btn-sm btn-outline">Reorder</button>';
+    const actionBtn = o.status === 'Shipped' ? trackBtn : reorderBtn;
+    rows += '<tr><td><strong>' + (o.orderId||o.id||'—') + '</strong></td><td>' + dateStr + '</td><td>' + itemsStr + '</td><td><strong>' + total + '</strong></td><td><span class="status-badge status-' + statusCls + '">' + (o.status||'—') + '</span></td><td>' + actionBtn + '</td></tr>';
+  });
+  tbody.innerHTML = rows;
 }
 
 async function fsUpdateOrderStatus(orderId, status) {
@@ -1553,8 +1557,7 @@ window.fsSaveAd       = fsSaveAd;
 window.fsDeleteAd     = fsDeleteAd;
 window.fsSaveProduct  = fsSaveProduct;
 window.fsDeleteProduct = fsDeleteProduct;
-
-</script>
+  </script>
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
