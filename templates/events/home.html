@@ -1,0 +1,32 @@
+{% extends "events/base.html" %}
+
+{% block title %}CampusConnect | Home{% endblock %}
+
+{% block content %}
+<section class="hero-card p-5 rounded-4 shadow-sm text-white mb-4">
+    <div class="col-lg-8">
+        <p class="text-uppercase small fw-semibold mb-2">University of Windsor</p>
+        <h1 class="display-5 fw-bold">CampusConnect</h1>
+        <p class="lead mb-0">Find, create, and track campus events in one central place.</p>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h4">Phase 1 setup</h2>
+                <p class="mb-0">The project scaffold is ready. Models, authentication, and event features will be added in later phases.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h4">Development stack</h2>
+                <p class="mb-0">Django 5.2, SQLite, Bootstrap 5, templates, static files, and local media uploads.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

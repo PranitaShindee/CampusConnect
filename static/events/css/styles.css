@@ -1,0 +1,33 @@
+:root {
+    --campus-navy: #13294b;
+    --campus-blue: #1e5aa8;
+    --campus-gold: #d6a11e;
+    --campus-light: #f5f7fb;
+    --campus-white: #ffffff;
+    --campus-text: #1d2433;
+}
+
+body {
+    background: var(--campus-light);
+    color: var(--campus-text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.campus-navbar {
+    background: linear-gradient(90deg, var(--campus-navy), var(--campus-blue));
+}
+
+.hero-card {
+    background: linear-gradient(135deg, var(--campus-navy), var(--campus-blue));
+}
+
+.campus-footer {
+    background: #0f1e36;
+    color: rgba(255, 255, 255, 0.86);
+}
+
+.card {
+    border-radius: 1rem;
+}
