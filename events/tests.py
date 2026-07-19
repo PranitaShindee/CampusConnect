@@ -169,7 +169,7 @@ class AuthenticationTests(TestCase):
             "password2": "password123!"
         })
         self.assertEqual(response.status_code, 200) # Form page re-rendered
-        self.assertFormError(response, "form", "email", "This email address is already registered.")
+        self.assertFormError(response.context["form"], "email", "This email address is already registered.")
 
     def test_login_access_and_redirect(self):
         User.objects.create_user(username="student1", password="password123")
