@@ -65,8 +65,12 @@ class EventListView(VisitTrackingMixin, ListView):
     def get_queryset(self):
         now = timezone.now()
         queryset = Event.objects.select_related("category", "creator")
-        if not self.request.user.is_authenticated or not self.request.user.is_staff:
+        if self.request.user.is_staff:
+            pass
+        elif self.request.user.is_authenticated:
             queryset = queryset.filter(Q(is_published=True) | Q(creator=self.request.user))
+        else:
+            queryset = queryset.filter(is_published=True)
 
         query = self.request.GET.get("q", "").strip()
         category_id = self.request.GET.get("category", "").strip()
@@ -275,17 +279,20 @@ def toggle_rsvp(request, slug):
         messages.error(request, "This event has already ended.")
         return redirect(safe_redirect_target(request, event.get_absolute_url()))
     with transaction.atomic():
-        rsvp, created = RSVP.objects.select_for_update().get_or_create(user=request.user, event=event, defaults={"status": RSVP.Status.ATTENDING})
-        if not created and rsvp.status == RSVP.Status.ATTENDING:
+        rsvp = RSVP.objects.select_for_update().filter(user=request.user, event=event).first()
+        if rsvp and rsvp.status == RSVP.Status.ATTENDING:
             rsvp.status = RSVP.Status.CANCELLED
             rsvp.save(update_fields=["status", "updated_at"])
             messages.success(request, "RSVP cancelled.")
         else:
-            if event.capacity is not None and event.attendee_count >= event.capacity and rsvp.status != RSVP.Status.ATTENDING:
+            if event.capacity is not None and event.attendee_count >= event.capacity:
                 messages.error(request, "This event is full.")
             else:
-                rsvp.status = RSVP.Status.ATTENDING
-                rsvp.save(update_fields=["status", "updated_at"])
+                if rsvp is None:
+                    RSVP.objects.create(user=request.user, event=event, status=RSVP.Status.ATTENDING)
+                else:
+                    rsvp.status = RSVP.Status.ATTENDING
+                    rsvp.save(update_fields=["status", "updated_at"])
                 messages.success(request, "RSVP confirmed.")
     return redirect(safe_redirect_target(request, event.get_absolute_url()))
 

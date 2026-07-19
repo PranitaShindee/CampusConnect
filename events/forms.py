@@ -135,6 +135,17 @@ class UserProfileForm(BootstrapFormMixin, forms.ModelForm):
             raise ValidationError("This email address is already in use.")
         return email
 
+    def clean_profile_picture(self):
+        picture = self.cleaned_data.get("profile_picture")
+        if not picture:
+            return picture
+        extension = picture.name.lower().rsplit(".", 1)[-1]
+        if f".{extension}" not in {".jpg", ".jpeg", ".png", ".webp"}:
+            raise ValidationError("Profile picture must be a JPG, JPEG, PNG, or WEBP image.")
+        if picture.size > 5 * 1024 * 1024:
+            raise ValidationError("Profile picture must be 5 MB or smaller.")
+        return picture
+
     def save(self, commit=True):
         profile = super().save(commit=False)
         if self.user:

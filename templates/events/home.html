@@ -1,32 +1,5 @@
-{% extends "events/base.html" %}
-
-{% block title %}CampusConnect | Home{% endblock %}
-
-{% block content %}
-<section class="hero-card p-5 rounded-4 shadow-sm text-white mb-4">
-    <div class="col-lg-8">
-        <p class="text-uppercase small fw-semibold mb-2">University of Windsor</p>
-        <h1 class="display-5 fw-bold">CampusConnect</h1>
-        <p class="lead mb-0">Find, create, and track campus events in one central place.</p>
-    </div>
-</section>
-
-<div class="row g-4">
-    <div class="col-md-6">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body">
-                <h2 class="h4">Phase 1 setup</h2>
-                <p class="mb-0">The project scaffold is ready. Models, authentication, and event features will be added in later phases.</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body">
-                <h2 class="h4">Development stack</h2>
-                <p class="mb-0">Django 5.2, SQLite, Bootstrap 5, templates, static files, and local media uploads.</p>
-            </div>
-        </div>
-    </div>
-</div>
+{% extends 'events/base.html' %}{% block title %}CampusConnect | Campus events{% endblock %}{% block content %}
+<section class="hero-card p-5 rounded-4 text-white mb-5"><div class="col-lg-8"><p class="text-uppercase small fw-semibold">University of Windsor</p><h1 class="display-5 fw-bold">Find your next campus moment.</h1><p class="lead">Discover workshops, career sessions, clubs, and community events in one place.</p><a class="btn btn-light" href="{% url 'events:event_list' %}">Explore events</a>{% if not user.is_authenticated %}<a class="btn btn-outline-light ms-2" href="{% url 'events:register' %}">Create an account</a>{% endif %}</div></section>
+<form class="card card-body shadow-sm mb-5" method="get" action="{% url 'events:event_list' %}"><div class="row g-2"><div class="col-md-7"><label class="visually-hidden" for="home-search">Search events</label><input id="home-search" name="q" class="form-control" placeholder="Search title, organizer, location..."></div><div class="col-md-3"><select name="category" class="form-select"><option value="">All categories</option>{% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}</select></div><div class="col-md-2"><button class="btn btn-primary w-100">Search</button></div></div></form>
+<section><div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h3">Upcoming events</h2><a href="{% url 'events:event_list' %}">View all</a></div><div class="row g-4">{% for event in featured_events %}<div class="col-md-6 col-lg-4"><div class="card h-100 shadow-sm border-0"><div class="card-body"><span class="badge text-bg-primary">{{ event.category }}</span><h3 class="h5 mt-3"><a class="text-decoration-none" href="{{ event.get_absolute_url }}">{{ event.title }}</a></h3><p class="small text-muted mb-2">{{ event.start_datetime|date:'M j, Y · g:i A' }}</p><p>{{ event.location }}</p></div></div></div>{% empty %}<p>No upcoming events have been published yet.</p>{% endfor %}</div></section>
 {% endblock %}
