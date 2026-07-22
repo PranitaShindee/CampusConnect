@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, PasswordResetForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
@@ -33,7 +33,16 @@ class RegistrationForm(BootstrapFormMixin, UserCreationForm):
             raise ValidationError("This email address is already registered.")
         return email
 
-
+class CustomPasswordResetForm(BootstrapFormMixin, PasswordResetForm):
+    email = forms.EmailField(
+        widget=forms.EmailInput(
+            attrs={
+                "placeholder": "Enter your registered email",
+                "autocomplete": "email",
+            }
+        )
+    )
+    
 class EventForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Event

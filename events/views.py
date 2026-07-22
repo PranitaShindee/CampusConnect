@@ -18,7 +18,9 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, T
 from .forms import CommentForm, ContactForm, EventForm, RegistrationForm, UserProfileForm
 from .models import Category, Comment, Event, EventHistory, FavoriteEvent, RSVP
 from .utils import ensure_user_profile, record_event_history, safe_redirect_target, set_response_cookies, update_recently_viewed, update_visit_session
-
+from django.contrib.auth.views import PasswordResetView
+from django.urls import reverse_lazy
+from .forms import CustomPasswordResetForm
 
 class VisitTrackingMixin:
     def dispatch(self, request, *args, **kwargs):
@@ -32,6 +34,15 @@ class VisitTrackingMixin:
             response = set_response_cookies(response, self.request, preferred_category=preferred_category)
         return response
 
+class CustomPasswordResetView(PasswordResetView):
+    template_name = "registration/password_reset_form.html"
+    form_class = CustomPasswordResetForm
+
+    email_template_name = "registration/password_reset_email.html"
+    subject_template_name = "registration/password_reset_subject.txt"
+
+    # success_url = reverse_lazy("password_reset_done")
+    success_url = reverse_lazy("events:password_reset_done")
 
 class HomeView(VisitTrackingMixin, TemplateView):
     template_name = "events/home.html"
